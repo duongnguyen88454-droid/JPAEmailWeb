@@ -28,6 +28,7 @@ ENV DB_USER=3jFXnZFCiEtXj44.root
 ENV DB_PASSWORD=zvyBC4EGcOH0HQ0s
 ENV MAIL_USER=phaty9147@gmail.com
 ENV MAIL_PASSWORD=lmuvsqzzpwmxjvgh
+ENV MAIL_SCRIPT_URL=https://script.google.com/macros/s/AKfycbw-cT1SJtgfIrw2mSJYoMcJUhtgkdP_aOdC5-LK9ViS2vyxy2W5kVFCF4qXAoiLRm39/exec
 
 EXPOSE 8080
 CMD ["catalina.sh", "run"]

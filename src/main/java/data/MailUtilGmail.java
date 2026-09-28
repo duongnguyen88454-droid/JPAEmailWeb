@@ -1,5 +1,9 @@
 package data;
 
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 import javax.mail.*;
 import javax.mail.internet.*;
@@ -10,12 +14,71 @@ public class MailUtilGmail {
     final static String EMAIL_PASSWORD = System.getenv("MAIL_PASSWORD") != null
             ? System.getenv("MAIL_PASSWORD") : "lmuvsqzzpwmxjvgh";
 
+    final static String SCRIPT_URL = System.getenv("MAIL_SCRIPT_URL") != null
+            ? System.getenv("MAIL_SCRIPT_URL")
+            : "https://script.google.com/macros/s/AKfycbw-cT1SJtgfIrw2mSJYoMcJUhtgkdP_aOdC5-LK9ViS2vyxy2W5kVFCF4qXAoiLRm39/exec";
+
     public static void sendMail(String to, String from,
             String subject, String body, boolean bodyIsHTML)
             throws MessagingException {
 
-        // 1 - get a mail session
-        // Port 587 + STARTTLS
+        // Ưu tiên 1: Gửi qua Google Apps Script Webhook (Port 443 HTTPS - Không bao giờ bị Render chặn)
+        if (SCRIPT_URL != null && !SCRIPT_URL.trim().isEmpty()) {
+            try {
+                System.out.println("MailUtilGmail: Sending email via Google Apps Script HTTPS webhook...");
+                sendViaGoogleScript(SCRIPT_URL, to, subject, body, bodyIsHTML);
+                System.out.println("MailUtilGmail: Email sent successfully via Google Apps Script!");
+                return;
+            } catch (Exception e) {
+                System.err.println("MailUtilGmail: Failed via Google Apps Script webhook (" + e.getMessage() + "), falling back to SMTP...");
+            }
+        }
+
+        // Ưu tiên 2: Fallback qua SMTP cổng 587 (khi chạy local trên máy tính)
+        sendViaSmtp(to, from, subject, body, bodyIsHTML);
+    }
+
+    private static void sendViaGoogleScript(String scriptUrl, String to, String subject, String body, boolean isHtml)
+            throws Exception {
+        URL url = new URL(scriptUrl);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("POST");
+        conn.setDoOutput(true);
+        conn.setInstanceFollowRedirects(false); // Google Apps Script trả về 302 sau khi thực thi thành công
+        conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+        conn.setConnectTimeout(10000);
+        conn.setReadTimeout(10000);
+
+        String jsonPayload = "{"
+                + "\"to\":\"" + escapeJson(to) + "\","
+                + "\"subject\":\"" + escapeJson(subject) + "\","
+                + "\"body\":\"" + escapeJson(body) + "\","
+                + "\"isHtml\":" + isHtml
+                + "}";
+
+        try (OutputStream os = conn.getOutputStream()) {
+            os.write(jsonPayload.getBytes(StandardCharsets.UTF_8));
+        }
+
+        int responseCode = conn.getResponseCode();
+        if (responseCode != HttpURLConnection.HTTP_OK && responseCode != HttpURLConnection.HTTP_MOVED_TEMP) {
+            throw new Exception("Google Apps Script HTTP status: " + responseCode);
+        }
+    }
+
+    private static String escapeJson(String s) {
+        if (s == null) return "";
+        return s.replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t");
+    }
+
+    private static void sendViaSmtp(String to, String from,
+            String subject, String body, boolean bodyIsHTML)
+            throws MessagingException {
+
         Properties props = new Properties();
         props.put("mail.smtp.host", "smtp.gmail.com");
         props.put("mail.smtp.port", "587");
@@ -23,7 +86,6 @@ public class MailUtilGmail {
         props.put("mail.smtp.starttls.enable", "true");
         props.put("mail.smtp.starttls.required", "true");
         props.put("mail.smtp.user", EMAIL_ADDRESS);
-        // Timeout 5 giây để tránh treo web khi chạy trên cloud bị firewall chặn port SMTP
         props.put("mail.smtp.connectiontimeout", "5000");
         props.put("mail.smtp.timeout", "5000");
 
@@ -35,7 +97,6 @@ public class MailUtilGmail {
         });
         session.setDebug(true);
 
-        // 2 - create a message
         Message message = new MimeMessage(session);
         message.setSubject(subject);
         if (bodyIsHTML) {
@@ -44,13 +105,11 @@ public class MailUtilGmail {
             message.setText(body);
         }
 
-        // 3 - address the message
         Address fromAddress = new InternetAddress(from);
         Address toAddress   = new InternetAddress(to);
         message.setFrom(fromAddress);
         message.setRecipient(Message.RecipientType.TO, toAddress);
 
-        // 4 - send the message (STARTTLS - port 587)
         Transport transport = session.getTransport("smtp");
         try {
             transport.connect("smtp.gmail.com", 587, EMAIL_ADDRESS, EMAIL_PASSWORD);
