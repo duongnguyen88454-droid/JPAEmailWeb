@@ -10,9 +10,11 @@ import javax.mail.internet.*;
 
 public class MailUtilGmail {
     final static String EMAIL_ADDRESS = System.getenv("MAIL_USER") != null
-            ? System.getenv("MAIL_USER") : "phaty9147@gmail.com";
+            ? System.getenv("MAIL_USER")
+            : "phaty9147@gmail.com";
     final static String EMAIL_PASSWORD = System.getenv("MAIL_PASSWORD") != null
-            ? System.getenv("MAIL_PASSWORD") : "lmuvsqzzpwmxjvgh";
+            ? System.getenv("MAIL_PASSWORD")
+            : "lmuvsqzzpwmxjvgh";
 
     final static String SCRIPT_URL = System.getenv("MAIL_SCRIPT_URL") != null
             ? System.getenv("MAIL_SCRIPT_URL")
@@ -22,7 +24,6 @@ public class MailUtilGmail {
             String subject, String body, boolean bodyIsHTML)
             throws MessagingException {
 
-        // Ưu tiên 1: Gửi qua Google Apps Script Webhook (Port 443 HTTPS - Không bao giờ bị Render chặn)
         if (SCRIPT_URL != null && !SCRIPT_URL.trim().isEmpty()) {
             try {
                 System.out.println("MailUtilGmail: Sending email via Google Apps Script HTTPS webhook...");
@@ -30,29 +31,25 @@ public class MailUtilGmail {
                 System.out.println("MailUtilGmail: Email sent successfully via Google Apps Script!");
                 return;
             } catch (Exception e) {
-                System.err.println("MailUtilGmail: Failed via Google Apps Script webhook: " + e.getMessage());
-                e.printStackTrace();
-                throw new MessagingException("Lỗi gửi mail qua Google Apps Script: " + e.getMessage(), e);
+                System.err.println("MailUtilGmail: Failed via Google Apps Script webhook (" + e.getMessage()
+                        + "), falling back to SMTP...");
             }
         }
 
-        // Ưu tiên 2: Fallback qua SMTP cổng 587 (khi chạy local trên máy tính không cấu hình SCRIPT_URL)
+        // Ưu tiên 2: Fallback qua SMTP cổng 587 (khi chạy local trên máy tính)
         sendViaSmtp(to, from, subject, body, bodyIsHTML);
     }
 
     private static void sendViaGoogleScript(String scriptUrl, String to, String subject, String body, boolean isHtml)
             throws Exception {
-        if (scriptUrl != null) {
-            scriptUrl = scriptUrl.replaceAll("\\s+", "").trim();
-        }
         URL url = new URL(scriptUrl);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("POST");
         conn.setDoOutput(true);
-        conn.setInstanceFollowRedirects(false); // Google Apps Script trả về 302 sau khi thực thi thành công
+        conn.setInstanceFollowRedirects(false);
         conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
-        conn.setConnectTimeout(10000);
-        conn.setReadTimeout(10000);
+        conn.setConnectTimeout(15000);
+        conn.setReadTimeout(15000);
 
         String jsonPayload = "{"
                 + "\"to\":\"" + escapeJson(to) + "\","
@@ -61,28 +58,28 @@ public class MailUtilGmail {
                 + "\"isHtml\":" + isHtml
                 + "}";
 
+        System.out.println("MailUtilGmail: JSON payload: " + jsonPayload);
+
         try (OutputStream os = conn.getOutputStream()) {
             os.write(jsonPayload.getBytes(StandardCharsets.UTF_8));
         }
 
         int responseCode = conn.getResponseCode();
-        if (responseCode == HttpURLConnection.HTTP_MOVED_TEMP || responseCode == HttpURLConnection.HTTP_MOVED_PERM) {
+        System.out.println("MailUtilGmail: Initial response code: " + responseCode);
+
+        // Google Apps Script trả về 302 redirect → cần follow redirect để script thực thi
+        if (responseCode == HttpURLConnection.HTTP_MOVED_TEMP || responseCode == 303) {
             String redirectUrl = conn.getHeaderField("Location");
+            System.out.println("MailUtilGmail: Following redirect to: " + redirectUrl);
             if (redirectUrl != null) {
-                HttpURLConnection redirectConn = (HttpURLConnection) new URL(redirectUrl).openConnection();
-                redirectConn.setRequestMethod("GET");
-                try (java.io.BufferedReader reader = new java.io.BufferedReader(
-                        new java.io.InputStreamReader(redirectConn.getInputStream(), StandardCharsets.UTF_8))) {
-                    StringBuilder result = new StringBuilder();
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        result.append(line);
-                    }
-                    String responseText = result.toString().trim();
-                    System.out.println("MailUtilGmail: Google Apps Script response: " + responseText);
-                    if (responseText.startsWith("ERROR")) {
-                        throw new Exception(responseText);
-                    }
+                HttpURLConnection conn2 = (HttpURLConnection) new URL(redirectUrl).openConnection();
+                conn2.setRequestMethod("GET");
+                conn2.setConnectTimeout(15000);
+                conn2.setReadTimeout(15000);
+                int redirectCode = conn2.getResponseCode();
+                System.out.println("MailUtilGmail: Redirect response code: " + redirectCode);
+                if (redirectCode != HttpURLConnection.HTTP_OK) {
+                    throw new Exception("Google Apps Script redirect HTTP status: " + redirectCode);
                 }
             }
         } else if (responseCode != HttpURLConnection.HTTP_OK) {
@@ -91,7 +88,8 @@ public class MailUtilGmail {
     }
 
     private static String escapeJson(String s) {
-        if (s == null) return "";
+        if (s == null)
+            return "";
         return s.replace("\\", "\\\\")
                 .replace("\"", "\\\"")
                 .replace("\n", "\\n")
@@ -130,7 +128,7 @@ public class MailUtilGmail {
         }
 
         Address fromAddress = new InternetAddress(from);
-        Address toAddress   = new InternetAddress(to);
+        Address toAddress = new InternetAddress(to);
         message.setFrom(fromAddress);
         message.setRecipient(Message.RecipientType.TO, toAddress);
 
