@@ -23,7 +23,7 @@ COPY --from=build /app/target/JPAPractic-1.0-SNAPSHOT.war /usr/local/tomcat/weba
 # ============================================================
 # Biến môi trường - TiDB Cloud + Gmail
 # ============================================================
-ENV DB_URL=jdbc:mysql://gateway01.ap-northeast-1.prod.aws.tidbcloud.com:4000/sys?useSSL=true&requireSSL=true&verifyServerCertificate=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+ENV DB_URL=jdbc:mysql://gateway01.ap-northeast-1.prod.aws.tidbcloud.com:4000/test?useSSL=true&requireSSL=true&verifyServerCertificate=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
 ENV DB_USER=3jFXnZFCiEtXj44.root
 ENV DB_PASSWORD=zvyBC4EGcOH0HQ0s
 ENV MAIL_USER=phaty9147@gmail.com

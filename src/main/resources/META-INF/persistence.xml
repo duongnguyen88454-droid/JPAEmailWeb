@@ -17,7 +17,7 @@
          <property name="javax.persistence.jdbc.driver"
             value="com.mysql.cj.jdbc.Driver"/>
          <property name="javax.persistence.jdbc.url"
-            value="jdbc:mysql://gateway01.ap-northeast-1.prod.aws.tidbcloud.com:4000/sys?useSSL=true&amp;requireSSL=true&amp;verifyServerCertificate=false&amp;serverTimezone=UTC&amp;allowPublicKeyRetrieval=true"/>
+            value="jdbc:mysql://gateway01.ap-northeast-1.prod.aws.tidbcloud.com:4000/test?useSSL=true&amp;requireSSL=true&amp;verifyServerCertificate=false&amp;serverTimezone=UTC&amp;allowPublicKeyRetrieval=true"/>
          <property name="javax.persistence.jdbc.user" value="3jFXnZFCiEtXj44.root"/>
          <property name="javax.persistence.jdbc.password" value="zvyBC4EGcOH0HQ0s"/>
 
