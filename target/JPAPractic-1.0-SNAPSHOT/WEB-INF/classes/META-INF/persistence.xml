@@ -12,21 +12,22 @@
       <exclude-unlisted-classes>false</exclude-unlisted-classes>
 
       <properties>
-         <!-- Kết nối SQL Server -->
+         <!-- Kết nối TiDB Cloud (MySQL Compatible) -->
+         <!-- Khi deploy, DBUntil.java sẽ override bằng biến môi trường DB_URL, DB_USER, DB_PASSWORD -->
          <property name="javax.persistence.jdbc.driver"
-            value="com.microsoft.sqlserver.jdbc.SQLServerDriver"/>
+            value="com.mysql.cj.jdbc.Driver"/>
          <property name="javax.persistence.jdbc.url"
-            value="jdbc:sqlserver://localhost:1433;databaseName=murach;encrypt=true;trustServerCertificate=true"/>
-         <property name="javax.persistence.jdbc.user" value="sa"/>
-         <property name="javax.persistence.jdbc.password" value="1234"/>
+            value="jdbc:mysql://gateway01.ap-northeast-1.prod.aws.tidbcloud.com:4000/sys?useSSL=true&amp;requireSSL=true&amp;verifyServerCertificate=false&amp;serverTimezone=UTC&amp;allowPublicKeyRetrieval=true"/>
+         <property name="javax.persistence.jdbc.user" value="3jFXnZFCiEtXj44.root"/>
+         <property name="javax.persistence.jdbc.password" value="zvyBC4EGcOH0HQ0s"/>
 
-         <!-- Hibernate Dialect và SQL Logging -->
+         <!-- Hibernate MySQL8 Dialect (tương thích TiDB) -->
          <property name="hibernate.dialect"
-            value="org.hibernate.dialect.SQLServer2012Dialect"/>
+            value="org.hibernate.dialect.MySQL8Dialect"/>
          <property name="hibernate.show_sql" value="true"/>
          <property name="hibernate.format_sql" value="true"/>
 
-         <!-- Tự động cập nhật bảng trong SQL Server -->
+         <!-- Hibernate tự động tạo/cập nhật bảng Users -->
          <property name="hibernate.hbm2ddl.auto" value="update"/>
       </properties>
    </persistence-unit>

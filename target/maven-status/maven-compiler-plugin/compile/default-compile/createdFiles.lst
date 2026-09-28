@@ -1,0 +1,8 @@
+com\mycompany\jpapractic\JakartaRestConfiguration.class
+Dao\UserDB.class
+Model\User.class
+data\ConnectionPool.class
+com\mycompany\jpapractic\resources\JakartaEE8Resource.class
+data\MailUtilGmail.class
+Controller\EmailListServlet.class
+data\DBUntil.class

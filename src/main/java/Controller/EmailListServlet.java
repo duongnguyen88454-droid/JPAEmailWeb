@@ -45,7 +45,7 @@ public class EmailListServlet extends HttpServlet {
                 UserDB.insert(user);
 
                 String to = email;
-                String from = "24110196@student.hcmute.edu.vn";
+                String from = "phaty9147@gmail.com";
                 String subject = "Welcome to our email list";
                 String body = "Dear " + firstName + ",\n\n"
                         + "Thanks for joining our email list. "
