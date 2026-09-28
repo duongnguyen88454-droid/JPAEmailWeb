@@ -26,6 +26,15 @@ public class DBUntil {
             String dbPassword = System.getenv("DB_PASSWORD");
 
             if (dbUrl != null && dbUser != null && dbPassword != null) {
+                // Tự động sửa nếu Render env vô tình trỏ vào database 'sys' (system schema không có quyền tạo bảng)
+                if (dbUrl.contains("/sys?")) {
+                    dbUrl = dbUrl.replace("/sys?", "/test?");
+                    System.out.println("DBUntil: Automatically corrected DB name from 'sys' to 'test'");
+                } else if (dbUrl.endsWith("/sys")) {
+                    dbUrl = dbUrl.substring(0, dbUrl.length() - 4) + "/test";
+                    System.out.println("DBUntil: Automatically corrected DB name from 'sys' to 'test'");
+                }
+
                 // Override persistence.xml bằng biến môi trường (khi deploy)
                 Map<String, String> props = new HashMap<>();
                 props.put("javax.persistence.jdbc.url",      dbUrl);
