@@ -1,0 +1,30 @@
+
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 11pt;
+    margin: 0em 2em 0em 2em;
+}
+
+h1 {
+    color: teal;
+}
+
+label {
+    float: left;
+    width: 6em;
+    margin-bottom: 0.5em;
+}
+
+input[type="text"] ,input[type="email"]{
+    width: 15em;
+    margin: 0em .5em .5em 0em;
+}
+
+br {
+    clear: both;
+}
+
+#submit {
+    margin-left: 0em
+}
