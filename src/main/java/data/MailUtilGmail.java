@@ -41,7 +41,7 @@ public class MailUtilGmail {
         if (bodyIsHTML) {
             message.setContent(body, "text/html; charset=UTF-8");
         } else {
-            message.setText(body, "UTF-8");
+            message.setText(body);
         }
 
         // 3 - address the message
