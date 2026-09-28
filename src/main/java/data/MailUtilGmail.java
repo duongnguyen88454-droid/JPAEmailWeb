@@ -30,16 +30,21 @@ public class MailUtilGmail {
                 System.out.println("MailUtilGmail: Email sent successfully via Google Apps Script!");
                 return;
             } catch (Exception e) {
-                System.err.println("MailUtilGmail: Failed via Google Apps Script webhook (" + e.getMessage() + "), falling back to SMTP...");
+                System.err.println("MailUtilGmail: Failed via Google Apps Script webhook: " + e.getMessage());
+                e.printStackTrace();
+                throw new MessagingException("Lỗi gửi mail qua Google Apps Script: " + e.getMessage(), e);
             }
         }
 
-        // Ưu tiên 2: Fallback qua SMTP cổng 587 (khi chạy local trên máy tính)
+        // Ưu tiên 2: Fallback qua SMTP cổng 587 (khi chạy local trên máy tính không cấu hình SCRIPT_URL)
         sendViaSmtp(to, from, subject, body, bodyIsHTML);
     }
 
     private static void sendViaGoogleScript(String scriptUrl, String to, String subject, String body, boolean isHtml)
             throws Exception {
+        if (scriptUrl != null) {
+            scriptUrl = scriptUrl.replaceAll("\\s+", "").trim();
+        }
         URL url = new URL(scriptUrl);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("POST");
@@ -61,7 +66,26 @@ public class MailUtilGmail {
         }
 
         int responseCode = conn.getResponseCode();
-        if (responseCode != HttpURLConnection.HTTP_OK && responseCode != HttpURLConnection.HTTP_MOVED_TEMP) {
+        if (responseCode == HttpURLConnection.HTTP_MOVED_TEMP || responseCode == HttpURLConnection.HTTP_MOVED_PERM) {
+            String redirectUrl = conn.getHeaderField("Location");
+            if (redirectUrl != null) {
+                HttpURLConnection redirectConn = (HttpURLConnection) new URL(redirectUrl).openConnection();
+                redirectConn.setRequestMethod("GET");
+                try (java.io.BufferedReader reader = new java.io.BufferedReader(
+                        new java.io.InputStreamReader(redirectConn.getInputStream(), StandardCharsets.UTF_8))) {
+                    StringBuilder result = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        result.append(line);
+                    }
+                    String responseText = result.toString().trim();
+                    System.out.println("MailUtilGmail: Google Apps Script response: " + responseText);
+                    if (responseText.startsWith("ERROR")) {
+                        throw new Exception(responseText);
+                    }
+                }
+            }
+        } else if (responseCode != HttpURLConnection.HTTP_OK) {
             throw new Exception("Google Apps Script HTTP status: " + responseCode);
         }
     }
