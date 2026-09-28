@@ -5,4 +5,5 @@ data\ConnectionPool.class
 com\mycompany\jpapractic\resources\JakartaEE8Resource.class
 data\MailUtilGmail.class
 Controller\EmailListServlet.class
+data\MailUtilGmail$1.class
 data\DBUntil.class

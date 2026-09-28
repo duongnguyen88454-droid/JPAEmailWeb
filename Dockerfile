@@ -14,6 +14,10 @@ RUN mvn clean package -DskipTests
 FROM tomcat:9.0-jdk8-openjdk
 
 RUN rm -rf /usr/local/tomcat/webapps/*
+
+# Fix: Tắt shutdown port 8005 để Render health check không kill Tomcat
+# Render gửi HTTP request vào port 8005 → Tomcat nhận lệnh shutdown giả → tự tắt
+RUN sed -i 's/port="8005" shutdown="SHUTDOWN"/port="-1" shutdown="SHUTDOWN"/' /usr/local/tomcat/conf/server.xml
 COPY --from=build /app/target/JPAPractic-1.0-SNAPSHOT.war /usr/local/tomcat/webapps/ROOT.war
 
 # ============================================================

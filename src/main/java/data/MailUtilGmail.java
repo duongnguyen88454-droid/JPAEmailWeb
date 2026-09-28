@@ -15,13 +15,20 @@ public class MailUtilGmail {
             throws MessagingException {
 
         // 1 - get a mail session
+        // Đổi sang port 587 + STARTTLS vì Render chặn port 465 (SMTPS)
         Properties props = new Properties();
-        props.put("mail.transport.protocol", "smtps");
-        props.put("mail.smtps.host", "smtp.gmail.com");
-        props.put("mail.smtps.port", 465);
-        props.put("mail.smtps.auth", "true");
-        props.put("mail.smtps.quitwait", "false");
-        Session session = Session.getDefaultInstance(props);
+        props.put("mail.smtp.host", "smtp.gmail.com");
+        props.put("mail.smtp.port", "587");
+        props.put("mail.smtp.auth", "true");
+        props.put("mail.smtp.starttls.enable", "true");
+        props.put("mail.smtp.starttls.required", "true");
+
+        Session session = Session.getInstance(props, new Authenticator() {
+            @Override
+            protected PasswordAuthentication getPasswordAuthentication() {
+                return new PasswordAuthentication(EMAIL_ADDRESS, EMAIL_PASSWORD);
+            }
+        });
         session.setDebug(true);
 
         // 2 - create a message
@@ -35,14 +42,11 @@ public class MailUtilGmail {
 
         // 3 - address the message
         Address fromAddress = new InternetAddress(from);
-        Address toAddress = new InternetAddress(to);
+        Address toAddress   = new InternetAddress(to);
         message.setFrom(fromAddress);
         message.setRecipient(Message.RecipientType.TO, toAddress);
 
-        // 4 - send the message
-        Transport transport = session.getTransport();
-        transport.connect(EMAIL_ADDRESS, EMAIL_PASSWORD);
-        transport.sendMessage(message, message.getAllRecipients());
-        transport.close();
+        // 4 - send the message (STARTTLS - port 587)
+        Transport.send(message);
     }
 }
