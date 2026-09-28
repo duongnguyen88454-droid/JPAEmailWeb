@@ -5,8 +5,11 @@ import javax.mail.*;
 import javax.mail.internet.*;
 
 public class MailUtilGmail {
-    final static String EMAIL_ADDRESS = "phaty9147@gmail.com";
-    final static String EMAIL_PASSWORD = "lmuv sqzz pwmx jvgh";
+    // Đọc từ biến môi trường khi deploy (Render), fallback về hardcode khi chạy local
+    final static String EMAIL_ADDRESS = System.getenv("MAIL_USER") != null
+            ? System.getenv("MAIL_USER") : "phaty9147@gmail.com";
+    final static String EMAIL_PASSWORD = System.getenv("MAIL_PASSWORD") != null
+            ? System.getenv("MAIL_PASSWORD") : "lmuvsqzzpwmxjvgh";
 
     public static void sendMail(String to, String from,
             String subject, String body, boolean bodyIsHTML)

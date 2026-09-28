@@ -12,7 +12,7 @@
       <exclude-unlisted-classes>false</exclude-unlisted-classes>
 
       <properties>
-         <!-- Kết nối SQL Server -->
+         <!-- Kết nối SQL Server - đọc từ biến môi trường khi deploy -->
          <property name="javax.persistence.jdbc.driver"
             value="com.microsoft.sqlserver.jdbc.SQLServerDriver"/>
          <property name="javax.persistence.jdbc.url"
